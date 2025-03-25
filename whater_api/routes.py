@@ -13,6 +13,8 @@ def get_db():
     finally:
         db.close()
 
+
+
 @router.post("/previsao/")
 def obter_previsao(cidade: str, db: Session = Depends(get_db)):
     """
@@ -35,6 +37,8 @@ def obter_previsao(cidade: str, db: Session = Depends(get_db)):
     else:
         raise HTTPException(status_code=400, detail="Erro ao obter dados da previsão")
 
+
+
 @router.get("/previsao/")
 def listar_previsoes(db: Session = Depends(get_db)):
     """
@@ -42,6 +46,8 @@ def listar_previsoes(db: Session = Depends(get_db)):
     """
     previsoes = db.query(models.Weather).all()
     return previsoes
+
+
 
 @router.get("/previsao/{id}")
 def buscar_previsao_por_id(id: int, db: Session = Depends(get_db)):
@@ -52,6 +58,8 @@ def buscar_previsao_por_id(id: int, db: Session = Depends(get_db)):
     if not previsao:
         raise HTTPException(status_code=404, detail="Previsão não encontrada")
     return previsao
+
+
 
 @router.get("/previsao/cidade")
 def buscar_previsao_por_cidade(cidade: str, data: str = None, db: Session = Depends(get_db)):
@@ -66,6 +74,8 @@ def buscar_previsao_por_cidade(cidade: str, data: str = None, db: Session = Depe
     
     previsoes = query.all()
     return previsoes
+
+
 
 @router.delete("/previsao/{id}")
 def deletar_previsao(id: int, db: Session = Depends(get_db)):
