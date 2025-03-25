@@ -25,7 +25,7 @@ A API estará disponível em http://127.0.0.1:8000/.
 
 
 3. Rodar a Interface (Streamlit)
-Navegue até a pasta do Streamlit e execute:
+Abra um Novo Terminal e execute
 streamlit run app_streamlit.py
 A interface estará disponível em http://localhost:8501/.
 

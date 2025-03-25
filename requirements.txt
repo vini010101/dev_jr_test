@@ -1,6 +1,5 @@
 fastapi
 sqlalchemy
-sqlite
 pydantic
 uvicorn
 requests
