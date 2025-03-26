@@ -2,6 +2,8 @@ from fastapi import FastAPI, Depends, Query, HTTPException, Body
 from sqlalchemy.orm import Session
 from . import crud, models, schemas, services
 from .database import SessionLocal, engine
+from .scheduler import send_city_to_webhook  # Função do webhook
+
 
 # Criação das tabelas no banco (se não existirem)
 models.Base.metadata.create_all(bind=engine)
@@ -16,15 +18,32 @@ def get_db():
     finally:
         db.close()
 
-# rota da API para criar uma nova cidade no banco de dados
 @app.post("/previsao/", response_model=schemas.Previsao)
 async def buscar_previsao(cidade: str = Body(..., embed=True), db: Session = Depends(get_db)):
     """
     Busca a previsão do tempo para a cidade na API externa
     e salva no banco de dados.
     """
+    # Busca a previsão da API externa
     previsao = services.buscar_previsao_api(cidade)
-    return crud.salvar_previsao(db=db, previsao=previsao)
+
+    # Salva a previsão no banco de dados
+    previsao_salva = crud.salvar_previsao(db=db, previsao=previsao)
+
+    # Gerar os dados a serem enviados para o Webhook a partir dos dados salvos
+    previsao_data = {
+        "id": previsao_salva.id,
+        "cidade": previsao_salva.cidade,
+        "temperatura": previsao_salva.temperatura,
+        "data": previsao_salva.data.isoformat(),  # Formato ISO 8601
+    }
+
+    # Enviar os dados para o webhook
+    send_city_to_webhook(previsao_data)
+
+    return previsao_salva
+
+
 
 # Rota da API para listar uma ou as cidades Que estão salvas no banco de dados
 @app.get("/previsao/", response_model=list[schemas.Previsao])
