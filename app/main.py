@@ -25,7 +25,7 @@ def job():
     verificar_e_enviar_para_webhook(db)
     db.close()  # Fechar a sessão após a execução
 
-# Inicialize o agendador
+
 scheduler = BackgroundScheduler()
 
 @app.on_event("startup")
@@ -70,7 +70,7 @@ async def listar_previsoes(
         if previsao:
             # Salva a previsão no banco de dados
             previsao_salva = crud.salvar_previsao(db=db, previsao=previsao)
-            return [previsao_salva]  # Retorna a previsão recém-salva
+            return [previsao_salva]
         else:
             raise HTTPException(status_code=404, detail="Previsão não encontrada para a cidade.")
     

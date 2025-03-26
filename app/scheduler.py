@@ -1,7 +1,7 @@
 import requests
 from . import crud, models
 
-WEBHOOK_URL = "https://webhook.site/14578e8a-bdf0-49ae-9abf-6ed0c9169dab"  # Substitua com a URL do seu webhook
+WEBHOOK_URL = "https://webhook.site/14578e8a-bdf0-49ae-9abf-6ed0c9169dab"  # Substitua com a URL do seu webhook, estou utlizando essa URl personalizada
 
 def send_data_to_webhook(data):
     """
@@ -31,6 +31,6 @@ def verificar_e_enviar_para_webhook(db):
             "id": previsao.id,
             "cidade": previsao.cidade,
             "temperatura": previsao.temperatura,
-            "data": previsao.data.isoformat(),  # Formato ISO 8601
+            "data": previsao.data.isoformat(),  
         }
         send_data_to_webhook(previsao_data)
