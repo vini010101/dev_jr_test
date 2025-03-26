@@ -16,14 +16,8 @@ def listar_previsoes(db: Session, cidade: str = None, data: str = None):
         query = query.filter(models.Previsao.data == data)
     return query.all()
 
-
-
 def excluir_previsao_por_cidade(db: Session, cidade: str):
-    """
-    Exclui a previsão de uma cidade específica no banco de dados.
-    """
     previsao = db.query(models.Previsao).filter(models.Previsao.cidade == cidade).first()
-    
     if previsao:
         db.delete(previsao)
         db.commit()

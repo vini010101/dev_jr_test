@@ -1,15 +1,14 @@
 from fastapi import FastAPI, Depends, Query, HTTPException, Body
 from sqlalchemy.orm import Session
+from apscheduler.schedulers.background import BackgroundScheduler
 from . import crud, models, schemas, services
 from .database import SessionLocal, engine
-from .scheduler import send_city_to_webhook  # Função do webhook
-
+from .scheduler import verificar_e_enviar_para_webhook
 
 # Criação das tabelas no banco (se não existirem)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
 
 def get_db():
     db = SessionLocal()
@@ -18,34 +17,39 @@ def get_db():
     finally:
         db.close()
 
+# Função que será chamada pelo agendador para verificar novos dados e enviar ao webhook
+def job():
+    # Obtenha a sessão do banco de dados diretamente aqui
+    db = SessionLocal()
+    print("Verificando novos dados e enviando para o webhook...")
+    verificar_e_enviar_para_webhook(db)
+    db.close()  # Fechar a sessão após a execução
+
+# Inicialize o agendador
+scheduler = BackgroundScheduler()
+
+@app.on_event("startup")
+async def start_scheduler():
+    print("Iniciando agendador...")
+    # Agendar a execução do job a cada 1 minuto
+    scheduler.add_job(job, 'interval', minutes=1)
+    scheduler.start()
+
+@app.on_event("shutdown")
+async def shutdown_scheduler():
+    print("Parando agendador...")
+    scheduler.shutdown()
+
+# Endpoint para buscar previsões e salvar no banco de dados
 @app.post("/previsao/", response_model=schemas.Previsao)
 async def buscar_previsao(cidade: str = Body(..., embed=True), db: Session = Depends(get_db)):
-    """
-    Busca a previsão do tempo para a cidade na API externa
-    e salva no banco de dados.
-    """
-    # Busca a previsão da API externa
     previsao = services.buscar_previsao_api(cidade)
-
-    # Salva a previsão no banco de dados
+    if not previsao:
+        raise HTTPException(status_code=404, detail="Previsão não encontrada.")
     previsao_salva = crud.salvar_previsao(db=db, previsao=previsao)
-
-    # Gerar os dados a serem enviados para o Webhook a partir dos dados salvos
-    previsao_data = {
-        "id": previsao_salva.id,
-        "cidade": previsao_salva.cidade,
-        "temperatura": previsao_salva.temperatura,
-        "data": previsao_salva.data.isoformat(),  # Formato ISO 8601
-    }
-
-    # Enviar os dados para o webhook
-    send_city_to_webhook(previsao_data)
-
     return previsao_salva
 
 
-
-# Rota da API para listar uma ou as cidades Que estão salvas no banco de dados
 @app.get("/previsao/", response_model=list[schemas.Previsao])
 async def listar_previsoes(
     cidade: str = Query(None, description="Nome da cidade para previsão", example="São Paulo"),
@@ -72,17 +76,11 @@ async def listar_previsoes(
     
     return previsoes
 
-
-
-# Função para excluir a previsão de uma cidade
+# Função para excluir previsão de cidade
 @app.delete("/previsao/{cidade}", response_model=schemas.Previsao)
 async def excluir_previsao(cidade: str, db: Session = Depends(get_db)):
-    """
-    Exclui a previsão de uma cidade específica no banco de dados.
-    """
     previsao = crud.excluir_previsao_por_cidade(db, cidade)
-    
     if previsao:
         return previsao
     else:
-        raise HTTPException(status_code=404, detail=f"Cidade '{cidade}' não encontrada.")
+        raise HTTPException(status_code=404, detail="Cidade não encontrada.")

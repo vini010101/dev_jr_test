@@ -3,14 +3,14 @@ from datetime import datetime
 
 class PrevisaoBase(BaseModel):
     cidade: str
-    temperatura: str
+    temperatura: float
+    data: datetime
 
 class PrevisaoCreate(PrevisaoBase):
     pass
 
 class Previsao(PrevisaoBase):
     id: int
-    data: datetime
 
     class Config:
         orm_mode = True

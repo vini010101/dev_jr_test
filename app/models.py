@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from .database import Base
 from datetime import datetime, timezone
 
@@ -9,3 +9,4 @@ class Previsao(Base):
     cidade = Column(String, index=True)
     temperatura = Column(String)
     data = Column(DateTime, default=datetime.now(timezone.utc))
+    enviado = Column(Boolean, default=False)
